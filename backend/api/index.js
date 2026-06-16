@@ -1,5 +1,5 @@
 // Vercel serverless function entry point
-// Uses raw Node.js http handling to avoid Express route matching issues on Vercel
+// Handles all API routes without Express
 
 export const config = {
   api: {
@@ -19,33 +19,51 @@ export default async function handler(req, res) {
     return;
   }
 
-  const url = req.url;
-  const method = req.method;
-
-  console.log(`Request: ${method} ${url}`);
-
-  // Parse the URL to get the path
+  const { url, method } = req;
   const path = url.split('?')[0];
 
-  // Route matching
+  console.log(`Request: ${method} ${path}`);
+
+  // Root URL - show API info
+  if (path === '/' || path === '') {
+    return res.status(200).json({
+      success: true,
+      message: 'Backend API is running',
+      endpoints: {
+        health: '/api/health',
+        test: '/api/test',
+        auth: '/api/auth/*',
+        dashboard: '/api/dashboard/*',
+        profile: '/api/profile/*',
+        career: '/api/career/*',
+        skills: '/api/skills/*',
+        'gap-analysis': '/api/gap-analysis/*',
+        roadmap: '/api/roadmap/*',
+        progress: '/api/progress/*',
+        projects: '/api/projects/*',
+        mentor: '/api/mentor/*',
+        notifications: '/api/notifications/*',
+      },
+    });
+  }
+
   if (path === '/api/health' || path === '/api/health/') {
     return res.status(200).json({ success: true, message: 'Server is running' });
   }
 
   if (path === '/test' || path === '/test/') {
-    return res.status(200).json({ success: true, message: 'Test works', url });
+    return res.status(200).json({ success: true, message: 'Test works' });
   }
 
   if (path === '/api/test' || path === '/api/test/') {
-    return res.status(200).json({ success: true, message: 'API test works', url });
+    return res.status(200).json({ success: true, message: 'API test works' });
   }
 
-  // If we get here, return 404 with debugging info
   return res.status(404).json({
     success: false,
     message: 'Route not found',
-    url: url,
     path: path,
     method: method,
+    tip: 'Try /api/health or /api/test',
   });
 }
