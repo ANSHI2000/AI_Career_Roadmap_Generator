@@ -1,5 +1,7 @@
-// Vercel serverless function entry point
-// Handles all API routes without Express
+import serverless from 'serverless-http';
+import { connectDB } from '../src/db.js';
+
+let serverlessHandler = null;
 
 export const config = {
   api: {
@@ -9,61 +11,19 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  // 1. Connect to database (cached across invocations)
+  try {
+    await connectDB();
+  } catch (error) {
+    console.error('Database connection error:', error.message);
   }
 
-  const { url, method } = req;
-  const path = url.split('?')[0];
-
-  console.log(`Request: ${method} ${path}`);
-
-  // Root URL - show API info
-  if (path === '/' || path === '') {
-    return res.status(200).json({
-      success: true,
-      message: 'Backend API is running',
-      endpoints: {
-        health: '/api/health',
-        test: '/api/test',
-        auth: '/api/auth/*',
-        dashboard: '/api/dashboard/*',
-        profile: '/api/profile/*',
-        career: '/api/career/*',
-        skills: '/api/skills/*',
-        'gap-analysis': '/api/gap-analysis/*',
-        roadmap: '/api/roadmap/*',
-        progress: '/api/progress/*',
-        projects: '/api/projects/*',
-        mentor: '/api/mentor/*',
-        notifications: '/api/notifications/*',
-      },
-    });
+  // 2. Lazy-load Express app and wrap it with serverless-http
+  if (!serverlessHandler) {
+    const { default: app } = await import('../src/app.js');
+    serverlessHandler = serverless(app);
   }
 
-  if (path === '/api/health' || path === '/api/health/') {
-    return res.status(200).json({ success: true, message: 'Server is running' });
-  }
-
-  if (path === '/test' || path === '/test/') {
-    return res.status(200).json({ success: true, message: 'Test works' });
-  }
-
-  if (path === '/api/test' || path === '/api/test/') {
-    return res.status(200).json({ success: true, message: 'API test works' });
-  }
-
-  return res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: path,
-    method: method,
-    tip: 'Try /api/health or /api/test',
-  });
+  // 3. Forward request to Express via serverless-http
+  return serverlessHandler(req, res);
 }
