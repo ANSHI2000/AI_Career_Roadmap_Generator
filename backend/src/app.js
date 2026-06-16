@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 
 // Load environment variables
 dotenv.config();
@@ -36,31 +35,17 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is running' });
 });
 
-const requireDatabase = (req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({
-      success: false,
-      message: 'Database is not connected. Start MongoDB or set MONGO_URI in backend/.env.',
-    });
-  }
-
-  next();
-};
-
-// Auth routes
-app.use('/api/auth', requireDatabase);
 app.use('/api/auth', authRoutes);
-
-app.use('/api/dashboard', requireDatabase, authMiddleware, dashboardRoutes);
-app.use('/api/profile', requireDatabase, authMiddleware, profileRoutes);
-app.use('/api/career', requireDatabase, authMiddleware, careerRoutes);
-app.use('/api/skills', requireDatabase, authMiddleware, skillRoutes);
-app.use('/api/gap-analysis', requireDatabase, authMiddleware, gapAnalysisRoutes);
-app.use('/api/roadmap', requireDatabase, authMiddleware, roadmapRoutes);
-app.use('/api/progress', requireDatabase, authMiddleware, progressRoutes);
-app.use('/api/projects', requireDatabase, authMiddleware, projectRoutes);
-app.use('/api/mentor', requireDatabase, authMiddleware, mentorRoutes);
-app.use('/api/notifications', requireDatabase, authMiddleware, notificationRoutes);
+app.use('/api/dashboard', authMiddleware, dashboardRoutes);
+app.use('/api/profile', authMiddleware, profileRoutes);
+app.use('/api/career', authMiddleware, careerRoutes);
+app.use('/api/skills', authMiddleware, skillRoutes);
+app.use('/api/gap-analysis', authMiddleware, gapAnalysisRoutes);
+app.use('/api/roadmap', authMiddleware, roadmapRoutes);
+app.use('/api/progress', authMiddleware, progressRoutes);
+app.use('/api/projects', authMiddleware, projectRoutes);
+app.use('/api/mentor', authMiddleware, mentorRoutes);
+app.use('/api/notifications', authMiddleware, notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {
